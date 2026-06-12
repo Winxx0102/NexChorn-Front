@@ -2,19 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
-import Navbar from "@/components/Navbar"; // 1. Importa tu Navbar
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "NexChron",
@@ -27,10 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-screen flex flex-col relative text-white selection:bg-indigo-500/30">
         
         {/* Fondo Global */}
@@ -41,7 +31,7 @@ export default function RootLayout({
         </div>
 
         <AuthProvider>
-          {/* 2. Navbar colocado aquí para que tenga acceso al contexto de autenticación */}
+          {/* La Navbar se encargará ella misma de ocultarse en el login */}
           <Navbar /> 
           
           <main className="flex-grow relative z-10">
@@ -49,7 +39,6 @@ export default function RootLayout({
           </main>
 
           <Footer />
-
           <Toaster theme="dark" position="top-right" richColors />
         </AuthProvider>
       </body>
