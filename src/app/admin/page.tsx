@@ -5,9 +5,19 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserActionMenu from '@/components/admin/UserActionMenu'; // Importa el nuevo componente
 
+type AdminUser = {
+  id: number;
+  email: string;
+  role: string;
+  isBlocked: boolean;
+  _count?: {
+    chronicles: number;
+  };
+};
+
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
-  const [users, setUsers] = useState<any[]>([]); // Tipado simplificado para el ejemplo
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState({ totalUsers: 0, blockedUsers: 0, totalchronicles: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);

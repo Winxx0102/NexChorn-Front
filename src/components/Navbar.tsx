@@ -1,72 +1,82 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
   const { logout, user, isLoading } = useAuth();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => setIsOpen(false), 0);
-      return () => clearTimeout(t);
-    }
-  }, [pathname]);
-
   if (pathname === '/login' || pathname === '/register') return null;
 
-  // Lógica de permisos
   const isAdminOrSuper = !isLoading && (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN');
   const isBlocked = !isLoading && user?.isBlocked;
 
   return (
-    <nav className="sticky top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-white/10 z-50">
+    <motion.nav 
+      initial={{ y: -100 }} 
+      animate={{ y: 0 }} 
+      className="sticky top-0 w-full bg-gray-950/60 backdrop-blur-xl border-b border-white/5 z-50"
+    >
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         
-        <Link href="/dashboard" className="text-2xl font-black text-white hover:text-indigo-400 transition-colors">
-          NexChron
+        <Link href="/dashboard" className="text-2xl font-black text-white tracking-tighter">
+          Nex<span className="text-indigo-500">Chron</span>
         </Link>
 
+        {/* Botón Hamburguesa */}
         <button 
-          className="md:hidden text-white p-2" 
+          className="md:hidden text-white p-2 hover:bg-white/10 rounded-lg transition-colors" 
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
         >
           {isOpen ? '✕' : '☰'}
         </button>
 
-        <div className={`
-          ${isOpen ? 'absolute top-full left-0 w-full bg-gray-900 border-b border-white/10 p-6 flex flex-col space-y-4' : 'hidden'}
-          md:flex md:static md:w-auto md:bg-transparent md:p-0 md:flex-row md:space-y-0 md:space-x-8 items-center
-        `}>
-          <Link href="/my-chronicles" className="text-gray-300 hover:text-indigo-400 transition-all">Mis Crónicas</Link>
-          
-          {/* Solo se muestra si NO está bloqueado */}
-          {!isBlocked && (
-            <Link href="/chronicles/create" className="text-gray-300 hover:text-indigo-400 transition-all">Nueva</Link>
-          )}
-          
-          {isAdminOrSuper && (
-            <Link 
-              href="/admin" 
-              className="text-indigo-400 font-bold hover:scale-105 transition-transform border border-indigo-500/30 px-3 py-1 rounded-lg"
+        {/* Menú Desktop & Mobile */}
+        <AnimatePresence>
+          {(isOpen || typeof window !== 'undefined' && window.innerWidth >= 768) && (
+            <motion.div 
+              initial={isOpen ? { opacity: 0, height: 0 } : false}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`
+                ${isOpen ? 'absolute top-full left-0 w-full bg-gray-950/95 border-b border-white/10 p-6 flex flex-col space-y-6' : 'hidden'}
+                md:flex md:static md:w-auto md:bg-transparent md:p-0 md:flex-row md:space-y-0 md:space-x-8 items-center
+              `}
             >
-              Admin Panel
-            </Link>
+              <Link href="/my-chronicles" className="text-gray-400 hover:text-white transition-colors uppercase text-xs font-bold tracking-widest">
+                Crónicas
+              </Link>
+              
+              {!isBlocked && (
+                <Link href="/chronicles/create" className="text-gray-400 hover:text-white transition-colors uppercase text-xs font-bold tracking-widest">
+                  Crear
+                </Link>
+              )}
+              
+              {isAdminOrSuper && (
+                <Link 
+                  href="/admin" 
+                  className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/50 px-4 py-2 rounded-xl transition-all font-bold text-xs"
+                >
+                  ADMIN PANEL
+                </Link>
+              )}
+              
+              <button 
+                onClick={() => logout()} 
+                className="bg-white hover:bg-gray-200 text-black px-5 py-2 rounded-xl transition-all font-bold text-xs"
+              >
+                SALIR
+              </button>
+            </motion.div>
           )}
-          
-          <button 
-            onClick={() => logout()} 
-            className="bg-white/5 hover:bg-red-500/20 text-white border border-white/10 px-4 py-2 rounded-xl transition-all"
-          >
-            Salir
-          </button>
-        </div>
+        </AnimatePresence>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

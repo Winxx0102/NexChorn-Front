@@ -4,6 +4,7 @@ import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ChronicleCard from '@/components/ChroniclesCard';
+import { motion } from 'framer-motion';
 
 type Chronicle = {
   id?: string;
@@ -56,49 +57,62 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen">
-        <main className="max-w-7xl mx-auto p-8">
-          <h1 className="text-3xl font-bold text-white mb-8">Explorar Crónicas</h1>
+      <div className="min-h-screen bg-gray-950 pb-20">
+        <main className="max-w-7xl mx-auto px-6 py-12">
           
-          {/* Barra de Filtros Avanzada */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <input 
-              type="text"
-              placeholder={`Buscar por ${filterBy === 'all' ? 'título o autor' : filterBy}...`}
-              className="flex-1 p-4 bg-gray-900/50 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500"
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            />
+          <div className="flex flex-col mb-12">
+            <h1 className="text-4xl font-black text-white mb-2">Explorar</h1>
+            <p className="text-gray-400">Descubre y sumérgete en las crónicas de la comunidad.</p>
+          </div>
+          
+          {/* Barra de búsqueda "Premium" */}
+          <div className="relative flex flex-col md:flex-row gap-4 mb-12 group">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+              <input 
+                type="text"
+                placeholder={`Buscar en ${filterBy === 'all' ? 'todo el archivo' : filterBy}...`}
+                className="w-full p-4 pl-12 bg-gray-900/40 border border-white/5 rounded-2xl text-white placeholder-gray-600 outline-none focus:border-indigo-500/50 focus:bg-gray-900 transition-all shadow-xl"
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
             
-              <select 
-                className="bg-gray-900/50 border border-white/10 rounded-xl px-4 text-gray-300 outline-none"
-                onChange={(e) => setFilterBy(e.target.value as 'title' | 'author' | 'all')}
-                value={filterBy}
+            <select 
+              className="bg-gray-900/40 border border-white/5 rounded-2xl px-6 text-gray-400 outline-none focus:text-white transition-colors cursor-pointer hover:bg-gray-900"
+              onChange={(e) => setFilterBy(e.target.value as 'title' | 'author' | 'all')}
+              value={filterBy}
             >
-              <option value="all">Todo</option>
+              <option value="all">Filtro: Todo</option>
               <option value="title">Título</option>
               <option value="author">Autor</option>
             </select>
           </div>
           
-          {/* Grid de Crónicas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid de Crónicas con animación de entrada */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {paginatedData.length > 0 ? (
               paginatedData.map((c, index) => (
                 <ChronicleCard key={c?.id || c?._id || index} chronicle={c} />
               ))
             ) : (
-              <p className="text-gray-500 col-span-full text-center py-20">No se encontraron crónicas con esos filtros.</p>
+              <div className="col-span-full text-center py-20 text-gray-600 border border-dashed border-gray-800 rounded-3xl">
+                No se encontraron crónicas que coincidan con tu búsqueda.
+              </div>
             )}
-          </div>
+          </motion.div>
 
-          {/* Paginador */}
+          {/* Paginador Minimalista */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-12">
+            <div className="flex justify-center gap-2 mt-16">
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-4 py-2 rounded-lg transition-all ${currentPage === i + 1 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                  className={`w-10 h-10 rounded-xl transition-all font-bold ${currentPage === i + 1 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-900 text-gray-500 hover:bg-gray-800'}`}
                 >
                   {i + 1}
                 </button>
