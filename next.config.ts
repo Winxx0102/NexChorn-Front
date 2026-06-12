@@ -1,12 +1,18 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
+  async headers() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://192.168.0.105:3000/:path*', // Tu backend
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; connect-src 'self' https://nex-chorn-back.vercel.app;",
+          },
+        ],
       },
     ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

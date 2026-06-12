@@ -2,7 +2,7 @@
 
 // Usamos la variable de entorno que configuraremos en Vercel.
 // Si no existe (estamos en local), usamos localhost:3000 por defecto.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nex-chorn-back.vercel.app';
 
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
   // Construimos la URL completa: https://tu-api.com/chronicles/1
