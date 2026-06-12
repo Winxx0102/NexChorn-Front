@@ -7,8 +7,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            // Añadimos 'unsafe-inline' para permitir los scripts que Next.js necesita
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://nex-chorn-back.vercel.app;",
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://nex-chorn-back.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data:;`,
           },
         ],
       },
