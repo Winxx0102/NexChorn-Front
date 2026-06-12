@@ -14,7 +14,7 @@ export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
     headers: {
       'Content-Type': 'application/json',
       // 3. Añadimos el token al header Authorization
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(token ? { 'Authorization': `${token}` } : {}),
       ...options.headers,
     },
   };
