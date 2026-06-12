@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
+import Navbar from "@/components/Navbar"; // 1. Importa tu Navbar
 import Footer from "@/components/Footer";
 import "./globals.css";
 
@@ -32,8 +33,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col relative text-white selection:bg-indigo-500/30">
         
-        {/* Fondo Global Difuminado */}
-        {/* pointer-events-none evita que el fondo bloquee clics */}
+        {/* Fondo Global */}
         <div className="fixed inset-0 -z-10 bg-gray-950 overflow-hidden pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-900/40 blur-[120px]" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/30 blur-[120px]" />
@@ -41,7 +41,9 @@ export default function RootLayout({
         </div>
 
         <AuthProvider>
-          {/* Aumentamos z-index a 10 para asegurar que esté sobre el fondo */}
+          {/* 2. Navbar colocado aquí para que tenga acceso al contexto de autenticación */}
+          <Navbar /> 
+          
           <main className="flex-grow relative z-10">
             {children}
           </main>

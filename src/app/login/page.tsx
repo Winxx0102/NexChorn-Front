@@ -1,35 +1,38 @@
 'use client';
 import { useState } from 'react';
-import Link from 'next/link'; // 1. Importa Link
+import Link from 'next/link';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  
+  // 1. Usamos el hook que definiste
+  const auth = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // 1. Hacemos el POST para obtener el token
-      // La respuesta ahora debe ser { access_token: "..." }
+      // 2. Realizamos la petición de login
       const data = await fetchApi('/auth/login', { 
         method: 'POST', 
         body: JSON.stringify(form) 
       });
 
-      // 2. Guardamos el token en localStorage para que nuestro api.ts lo lea
+      // 3. Guardamos el token recibido
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
       }
 
-      // 3. Actualizamos el estado de autenticación de tu aplicación
-      await login(data); 
+      // 4. Actualizamos el estado del contexto. 
+      // Suponiendo que tu backend devuelve el objeto de usuario en 'data.user' 
+      // o que 'data' es el usuario mismo.
+      auth?.login(data.user || data); 
       
-      // 4. Redirección
+      // 5. Redirección
       window.location.href = '/dashboard';
     } catch (err: unknown) {
       console.error("Login fallido:", err);

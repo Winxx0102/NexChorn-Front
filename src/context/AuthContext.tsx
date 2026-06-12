@@ -2,56 +2,62 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { fetchApi } from '@/services/api';
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'USER' | 'ADMIN' | 'SUPERADMIN';
-}
+type User = {
+  id: string;
+  name?: string;
+  email?: string;
+  [key: string]: unknown;
+};
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   login: (userData: User) => void;
   logout: () => Promise<void>;
   isLoading: boolean;
-}
+};
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: () => {},
-  logout: async () => {},
-  isLoading: true,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const verifySession = async () => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // CORRECCIÓN: Usamos el endpoint correcto definido en tu AuthController
         const data = await fetchApi('/auth/verify-session'); 
-        
-        // CORRECCIÓN: Si tu backend devuelve { user: { ... } }, accedemos a la propiedad .user
         setUser(data.user || data); 
       } catch (err) {
-        console.warn("Sesión no encontrada o expirada");
+        console.warn("Sesión expirada o token inválido");
+        localStorage.removeItem('token');
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-    verifySession();
+    initAuth();
   }, []);
 
-  const login = (userData: User) => setUser(userData);
+  const login = (userData: User) => {
+    setUser(userData);
+  };
 
   const logout = async () => {
     try {
-      await fetchApi('/auth/logout');
+      await fetchApi('/auth/logout'); 
+    } catch (e) {
+      console.error("Error al cerrar sesión en el servidor");
     } finally {
+      localStorage.removeItem('token');
       setUser(null);
+      window.location.href = '/login';
     }
   };
 
@@ -62,4 +68,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// --- AÑADE ESTO PARA REPARAR EL ERROR ---
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
+  return context;
+};
