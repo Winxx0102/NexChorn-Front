@@ -9,7 +9,7 @@ interface User {
   email?: string;
   role?: string;
   isBlocked: boolean;
-  _count: { chronicles: number }; // Datos recibidos del backend
+  _count: { chronicles: number };
 }
 
 export default function AdminPage() {
@@ -21,12 +21,11 @@ export default function AdminPage() {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [usersResponse, statsData] = await Promise.all([
         fetchApi('/users'),
         fetchApi('/users/admin/stats')
       ]);
-      
-      // Ajuste: Accedemos a .data porque tu backend devuelve { data: [], totalPages }
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
       setStats(statsData);
     } catch (err) {
@@ -38,24 +37,30 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      const timer = setTimeout(() => {
-        void loadData();
-      }, 0);
-      return () => clearTimeout(timer);
+      // call inside an async IIFE to avoid calling setState synchronously in the effect body
+      void (async () => {
+        await loadData();
+      })();
     }
   }, [isLoading]);
 
-  const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', role?: string) => {
+  const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', newRole?: string) => {
     try {
       if (action === 'role') {
-        if (!confirm(`¿Confirmas cambiar el rol a ${role}?`)) return;
-        await fetchApi(`/users/role/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) });
+        // Confirmación específica para roles
+        if (!confirm(`¿Confirmas ascender/cambiar el rol a ${newRole}?`)) return;
+        await fetchApi(`/users/role/${id}`, { 
+          method: 'PATCH', 
+          body: JSON.stringify({ role: newRole }) 
+        });
       } else {
         await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
-      toast.success("Operación realizada correctamente");
-      loadData(); // Recarga la tabla para ver los cambios de rol/bloqueo al instante
-    } catch {
+      
+      toast.success("Cambio realizado correctamente");
+      // Recargamos los datos para asegurar que la tabla muestre la verdad del servidor
+      await loadData();
+    } catch (err) {
       toast.error("Error al ejecutar la acción");
     }
   };
@@ -64,7 +69,7 @@ export default function AdminPage() {
     return users.filter((u) => u.email?.toLowerCase().includes(search.toLowerCase()));
   }, [users, search]);
 
-  if (loading) return <div className="text-white text-center p-20">Cargando panel de administración...</div>;
+  if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando panel de administración...</div>;
 
   return (
     <div className="space-y-8">
@@ -87,7 +92,6 @@ export default function AdminPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-2xl font-bold text-white">Usuarios Registrados</h2>
-            <p className="text-gray-400 text-sm">Gestiona permisos y estado de cuentas</p>
           </div>
           <input 
             placeholder="Buscar por email..."
@@ -120,7 +124,7 @@ export default function AdminPage() {
                 <td className="p-4 text-center font-mono">{u._count?.chronicles || 0}</td>
                 <td className="p-4 flex gap-3 justify-center items-center">
                   
-                  {/* Botón de Bloqueo Toggle */}
+                  {/* Botón de Bloqueo */}
                   <button 
                     onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
                     className={`px-3 py-1 rounded-lg text-sm border transition-all ${
@@ -130,9 +134,10 @@ export default function AdminPage() {
                     {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
                   </button>
 
-                  {/* Selector de Roles (Solo SuperAdmin) */}
+                  {/* Selector de Roles */}
                   {user?.role === 'SUPERADMIN' && (
                     <select 
+                      key={u.role} // Esto fuerza a React a re-renderizar si el rol cambia
                       defaultValue={u.role}
                       onChange={(e) => handleAction(u.id, 'role', e.target.value)}
                       className="bg-gray-800 border border-white/10 rounded-lg px-2 py-1 text-sm text-white cursor-pointer hover:border-indigo-500"
