@@ -4,13 +4,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
-
 export default function ChronicleDetailPage() {
   const params = useParams();
   const router = useRouter();
-  // El contexto de auth no expone 'loading' en este proyecto, así que solo obtenemos user
-  const { user } = useAuth();
-  const authLoading = false;
+  
+  // IMPORTANTE: Consumimos el isLoading real del contexto
+  const { user, isLoading: authLoading } = useAuth();
   
   interface Chronicle {
     id?: string;
@@ -24,10 +23,9 @@ export default function ChronicleDetailPage() {
   const [chronicle, setChronicle] = useState<Chronicle | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Lógica de permisos flexible: verifica si el usuario existe y su rol coincide
-  // Usamos toUpperCase para evitar problemas con ADMIN vs admin
-const userRole = (user?.role as string | undefined)?.toUpperCase()
-  const canEdit = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
+  // Lógica de permisos: solo habilitar si no está cargando y es ADMIN/SUPERADMIN
+  const userRole = (user?.role as string | undefined)?.toUpperCase();
+  const canEdit = !authLoading && (userRole === 'ADMIN' || userRole === 'SUPERADMIN');
 
   useEffect(() => {
     const id = params?.id;
@@ -46,49 +44,45 @@ const userRole = (user?.role as string | undefined)?.toUpperCase()
 
   // Si estamos cargando datos o la autenticación, mostramos un estado neutral
   if (loading || authLoading) {
-    return <div className="min-h-screen  text-white flex items-center justify-center">Cargando...</div>;
+    return <div className="min-h-screen text-white flex items-center justify-center">Cargando...</div>;
   }
   
   if (!chronicle) {
-    return <div className="min-h-screen  text-white flex items-center justify-center">Crónica no encontrada.</div>;
+    return <div className="min-h-screen text-white flex items-center justify-center">Crónica no encontrada.</div>;
   }
 
   return (
-    <div className="min-h-screen ">
-     
-      
+    <div className="min-h-screen">
       <main className="max-w-4xl mx-auto px-6 py-12">
         <button 
           onClick={() => router.back()} 
           className="text-gray-400 hover:text-white mb-8 text-sm transition-colors"
         >
-          ← Volver al Dashboard
+          ← Volver
         </button>
 
-        <article className="bg-gray-900 border border-gray-800 rounded-2xl p-8 md:p-12">
+        <article className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 md:p-12">
           <div className="flex justify-between items-start mb-8">
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">{chronicle.title}</h1>
               <p className="text-lg text-indigo-400 italic">Por: {chronicle.author}</p>
             </div>
 
-            {/* Renderizado condicional del botón */}
+            {/* Botón con el mismo estilo que tu ChronicleCard */}
             {canEdit && (
               <button 
                 onClick={() => {
                   const idToEdit = chronicle.id || chronicle._id;
-                  if (idToEdit) {
-                    router.push(`/chronicles/edit/${idToEdit}`);
-                  }
+                  if (idToEdit) router.push(`/chronicles/edit/${idToEdit}`);
                 }}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20"
+                className="bg-indigo-600/80 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 Editar Crónica
               </button>
             )}
           </div>
 
-          <div className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed">
+          <div className="text-gray-300 leading-relaxed text-lg whitespace-pre-line">
             {chronicle.content}
           </div>
         </article>

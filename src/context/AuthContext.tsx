@@ -1,10 +1,9 @@
 'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '@/services/api';
 
 export type User = {
   id: string;
-  name?: string;
   email?: string;
   role?: 'USER' | 'ADMIN' | 'SUPERADMIN' | string;
   [key: string]: unknown;
@@ -15,6 +14,7 @@ type AuthContextType = {
   login: (userData: User) => void;
   logout: () => Promise<void>;
   isLoading: boolean;
+  refreshUser: () => Promise<void>; // <-- Nueva utilidad
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,22 +23,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // Al usar credentials: 'include' en fetchApi, 
-        // el navegador envía la cookie automáticamente aquí.
-        const data = await fetchApi('/auth/verify-session'); 
-        setUser(data.user || data); 
-      } catch (err) {
-        // Si falla, es porque no hay sesión o la cookie expiró
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initAuth();
+  // Función para re-verificar la sesión (útil tras cambios)
+  const refreshUser = useCallback(async () => {
+    try {
+      const data = await fetchApi('/auth/verify-session');
+      // Asegúrate de que aquí llega el objeto usuario correctamente
+      setUser(data.user || data); 
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Call refreshUser asynchronously to avoid synchronous setState in effect
+    const run = async () => {
+      await refreshUser();
+    };
+    run();
+  }, [refreshUser]);
 
   const login = (userData: User) => {
     setUser(userData);
@@ -46,18 +50,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await fetchApi('/auth/logout'); 
+      await fetchApi('/auth/logout');
     } catch (e) {
-      console.error("Error al cerrar sesión en el servidor");
+      console.error("Error al cerrar sesión");
     } finally {
-      // Ya no necesitamos eliminar localStorage.removeItem('token')
       setUser(null);
       window.location.href = '/login';
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 'use client';
-import { User } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext'; // Importamos el hook del contexto
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Importamos el router
+import { useRouter } from 'next/navigation';
 
 type Chronicle = {
   id?: string;
@@ -11,17 +11,23 @@ type Chronicle = {
   content?: string;
 };
 
-export default function ChronicleCard({ chronicle, user }: { chronicle: Chronicle | null, user: User | null }) {
-  const router = useRouter(); // Inicializamos el router
+export default function ChronicleCard({ chronicle }: { chronicle: Chronicle | null }) {
+  const router = useRouter();
+  
+  // Consumimos el estado global. 'isLoading' es vital para saber 
+  // si el usuario aún se está verificando.
+  const { user, isLoading } = useAuth(); 
 
   if (!chronicle) return null;
 
   const chronicleId = chronicle?.id || chronicle?._id;
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+
+  // Lógica de permisos: solo es visible si NO está cargando y es ADMIN/SUPERADMIN
+  const canEdit = !isLoading && (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN');
 
   const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault(); // Evita que se dispare el Link del padre
-    e.stopPropagation(); // Evita que el evento se propague al Link
+    e.preventDefault(); 
+    e.stopPropagation(); 
     if (chronicleId) {
       router.push(`/chronicles/edit/${chronicleId}`);
     }
@@ -29,7 +35,6 @@ export default function ChronicleCard({ chronicle, user }: { chronicle: Chronicl
 
   return (
     <Link href={chronicleId ? `/chronicles/${chronicleId}` : '#'} className="block h-full">
-      {/* Aplicamos Glassmorphism para que combine con tu nuevo wallpaper */}
       <div className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-2xl p-6 transition-all hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 cursor-pointer h-full">
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -41,6 +46,7 @@ export default function ChronicleCard({ chronicle, user }: { chronicle: Chronicl
             </p>
           </div>
           
+          {/* El botón ahora reacciona automáticamente cuando isLoading cambia a false */}
           {canEdit && (
             <button 
               onClick={handleEdit}
