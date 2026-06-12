@@ -82,7 +82,7 @@ export default function MyChroniclesPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginatedData.map((c: Chronicle) => (
-                  <ChronicleCard key={c.id || c._id} chronicle={c} user={user} />
+                  <ChronicleCard key={c.id || c._id} chronicle={c} />
                 ))}
               </div>
 
