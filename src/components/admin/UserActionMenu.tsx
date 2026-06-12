@@ -12,6 +12,13 @@ export default function UserActionMenu({ userRole, targetUser, onAction }: Props
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Depuración: Si el menú no muestra "Cambiar Rol", mira la consola del navegador
+  useEffect(() => {
+    if (isOpen) {
+      console.log("Menú abierto. Tu rol recibido es:", `"${userRole}"`);
+    }
+  }, [isOpen, userRole]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsOpen(false);
@@ -19,6 +26,9 @@ export default function UserActionMenu({ userRole, targetUser, onAction }: Props
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Normalizamos el rol para evitar errores de espacios o mayúsculas
+  const isSuperAdmin = userRole?.trim().toUpperCase() === 'SUPERADMIN';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -44,7 +54,7 @@ export default function UserActionMenu({ userRole, targetUser, onAction }: Props
               {targetUser.isBlocked ? 'Desbloquear usuario' : 'Bloquear usuario'}
             </button>
 
-            {userRole === 'SUPERADMIN' && (
+            {isSuperAdmin && (
               <div className="border-t border-white/5 mt-2 pt-2">
                 <p className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold">Cambiar Rol</p>
                 {['USER', 'ADMIN', 'SUPERADMIN'].map((role) => (
