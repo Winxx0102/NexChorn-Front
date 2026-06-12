@@ -14,11 +14,22 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const userData = await fetchApi('/auth/login', { 
+      // 1. Hacemos el POST para obtener el token
+      // La respuesta ahora debe ser { access_token: "..." }
+      const data = await fetchApi('/auth/login', { 
         method: 'POST', 
         body: JSON.stringify(form) 
       });
-      await login(userData); 
+
+      // 2. Guardamos el token en localStorage para que nuestro api.ts lo lea
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      }
+
+      // 3. Actualizamos el estado de autenticación de tu aplicación
+      await login(data); 
+      
+      // 4. Redirección
       window.location.href = '/dashboard';
     } catch (err: unknown) {
       console.error("Login fallido:", err);
@@ -29,6 +40,7 @@ export default function LoginPage() {
     }
   };
 
+  // ... resto de tu renderizado (inputs, botones, etc.)
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="p-8 bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-gray-800">

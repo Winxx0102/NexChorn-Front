@@ -1,18 +1,20 @@
 // src/services/api.ts
 
-// Usamos la variable de entorno que configuraremos en Vercel.
-// Si no existe (estamos en local), usamos localhost:3000 por defecto.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nex-chorn-back.vercel.app';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nexchorn-back.onrender.com';
 
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
-  // Construimos la URL completa: https://tu-api.com/chronicles/1
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
+  // 1. Recuperamos el token del almacenamiento local
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
   const config: RequestInit = {
     ...options,
-    credentials: 'include', // Necesario para enviar cookies de sesión
+    // 2. Quitamos 'credentials: include' porque ya no usamos cookies
     headers: {
       'Content-Type': 'application/json',
+      // 3. Añadimos el token al header Authorization
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...options.headers,
     },
   };
@@ -20,15 +22,12 @@ export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
   const response = await fetch(url, config);
 
   if (response.status === 401) {
-    throw new Error('Unauthorized: Sesión expirada o no iniciada.');
+    // Aquí podrías redirigir al login si el token es inválido
+    throw new Error('Unauthorized');
   }
 
-  // Intentamos leer el JSON. Si la respuesta está vacía, evitamos error.
   const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Error en la petición');
-  }
-
+  
+  if (!response.ok) throw new Error(data.message || 'Error');
   return data;
 };
