@@ -10,10 +10,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Efecto para cerrar el menú al cambiar de ruta
   useEffect(() => {
-    // Avoid calling setState synchronously inside the effect to prevent
-    // cascading renders — schedule the close on the next macrotask.
     if (isOpen) {
       const t = setTimeout(() => setIsOpen(false), 0);
       return () => clearTimeout(t);
@@ -22,7 +19,9 @@ export default function Navbar() {
 
   if (pathname === '/login' || pathname === '/register') return null;
 
+  // Lógica de permisos
   const isAdminOrSuper = !isLoading && (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN');
+  const isBlocked = !isLoading && user?.isBlocked;
 
   return (
     <nav className="sticky top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-white/10 z-50">
@@ -32,7 +31,6 @@ export default function Navbar() {
           NexChron
         </Link>
 
-        {/* Botón Hamburguesa */}
         <button 
           className="md:hidden text-white p-2" 
           onClick={() => setIsOpen(!isOpen)}
@@ -41,13 +39,16 @@ export default function Navbar() {
           {isOpen ? '✕' : '☰'}
         </button>
 
-        {/* Menú */}
         <div className={`
           ${isOpen ? 'absolute top-full left-0 w-full bg-gray-900 border-b border-white/10 p-6 flex flex-col space-y-4' : 'hidden'}
           md:flex md:static md:w-auto md:bg-transparent md:p-0 md:flex-row md:space-y-0 md:space-x-8 items-center
         `}>
           <Link href="/my-chronicles" className="text-gray-300 hover:text-indigo-400 transition-all">Mis Crónicas</Link>
-          <Link href="/chronicles/create" className="text-gray-300 hover:text-indigo-400 transition-all">Nueva</Link>
+          
+          {/* Solo se muestra si NO está bloqueado */}
+          {!isBlocked && (
+            <Link href="/chronicles/create" className="text-gray-300 hover:text-indigo-400 transition-all">Nueva</Link>
+          )}
           
           {isAdminOrSuper && (
             <Link 
