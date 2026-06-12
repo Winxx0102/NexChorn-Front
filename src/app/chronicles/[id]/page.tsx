@@ -26,7 +26,7 @@ export default function ChronicleDetailPage() {
 
   // Lógica de permisos flexible: verifica si el usuario existe y su rol coincide
   // Usamos toUpperCase para evitar problemas con ADMIN vs admin
-  const userRole = user?.role?.toUpperCase();
+const userRole = (user?.role as string | undefined)?.toUpperCase()
   const canEdit = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
   useEffect(() => {
