@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-950 pb-20">
+      <div className="min-h-screen pb-20">
         <main className="max-w-7xl mx-auto px-6 py-12">
           
           <div className="flex flex-col mb-12">
@@ -68,7 +68,7 @@ export default function DashboardPage() {
           {/* Barra de búsqueda "Premium" */}
           <div className="relative flex flex-col md:flex-row gap-4 mb-12 group">
             <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></span>
               <input 
                 type="text"
                 placeholder={`Buscar en ${filterBy === 'all' ? 'todo el archivo' : filterBy}...`}
