@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Navbar from '@/components/Navbar';
+
 import ChronicleCard from '@/components/ChroniclesCard';
 
 type Chronicle = {
@@ -51,7 +51,7 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen">
-        <Navbar />
+      
         <main className="max-w-7xl mx-auto p-8">
           <h1 className="text-3xl font-bold text-white mb-8">Crónicas</h1>
           
