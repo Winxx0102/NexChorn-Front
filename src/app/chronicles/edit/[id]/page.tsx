@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-
+import { motion } from 'framer-motion';
 
 export default function EditChroniclePage() {
   const params = useParams();
@@ -54,56 +54,66 @@ export default function EditChroniclePage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta crónica? Esta acción no se puede deshacer.")) {
-      return;
-    }
-
-    const loadingToast = toast.loading("Eliminando...");
-
-    try {
-      await fetchApi(`/chronicles/${id}`, {
-        method: 'DELETE',
-      });
-
-      toast.dismiss(loadingToast);
-      toast.success('Crónica eliminada correctamente');
-      router.push('/dashboard');
-    } catch (err) {
-      toast.dismiss(loadingToast);
-      toast.error("Error al intentar eliminar la crónica.");
-    }
+  const handleDelete = () => {
+    toast.warning('¿Estás seguro de eliminar esta crónica?', {
+      description: "Esta acción es irreversible.",
+      action: {
+        label: "Eliminar definitivamente",
+        onClick: async () => {
+          try {
+            await fetchApi(`/chronicles/${id}`, { method: 'DELETE' });
+            toast.success('Crónica eliminada correctamente');
+            router.push('/dashboard');
+          } catch {
+            toast.error("Error al eliminar.");
+          }
+        }
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => toast.dismiss(),
+      }
+    });
   };
 
-  if (loading) return <div className="text-white p-8">Cargando...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-indigo-400">Cargando editor...</div>;
 
   return (
-    <div className="min-h-screen text-white">
-      
-      <main className="max-w-2xl mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-8">Editar Crónica</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Título</label>
+    <div className="min-h-screen bg-gray-950 py-16 px-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-3xl mx-auto"
+      >
+        <div className="mb-8">
+          <h1 className="text-4xl font-black text-white mb-2">Editar Crónica</h1>
+          <p className="text-gray-400">Modifica los detalles de esta historia.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-gray-900/40 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl space-y-6">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Título</label>
             <input 
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full bg-gray-900 border border-gray-800 p-4 rounded-xl focus:border-indigo-500 outline-none"
+              className="w-full p-4 bg-gray-950 border border-white/10 text-white rounded-xl focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all"
             />
           </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Contenido</label>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Contenido</label>
             <textarea 
               value={formData.content}
               onChange={(e) => setFormData({...formData, content: e.target.value})}
-              className="w-full bg-gray-900 border border-gray-800 p-4 rounded-xl h-64 focus:border-indigo-500 outline-none"
+              rows={12}
+              className="w-full p-4 bg-gray-950 border border-white/10 text-white rounded-xl focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all resize-none"
             />
           </div>
           
-          <div className="flex gap-4">
+          <div className="flex gap-4 pt-4">
             <button 
               type="submit" 
-              className="flex-1 bg-indigo-600 p-4 rounded-xl font-bold hover:bg-indigo-500 transition-all"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-xl font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
             >
               Guardar Cambios
             </button>
@@ -111,13 +121,13 @@ export default function EditChroniclePage() {
             <button 
               type="button" 
               onClick={handleDelete}
-              className="px-6 bg-red-900/30 border border-red-500/50 text-red-500 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all"
+              className="px-8 bg-red-900/20 border border-red-500/20 text-red-400 hover:bg-red-600 hover:text-white rounded-xl font-bold transition-all active:scale-[0.98]"
             >
               Eliminar
             </button>
           </div>
         </form>
-      </main>
+      </motion.div>
     </div>
   );
 }
