@@ -65,10 +65,11 @@ export default function DashboardPage() {
             <p className="text-gray-400">Descubre y sumérgete en las crónicas de la comunidad.</p>
           </div>
           
-          {/* Barra de búsqueda "Premium" */}
-          <div className="relative flex flex-col md:flex-row gap-4 mb-12 group">
-            <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></span>
+          {/* Barra de búsqueda y Filtro Responsivos */}
+          <div className="flex flex-col md:flex-row gap-4 mb-12">
+            {/* Campo de búsqueda */}
+            <div className="relative flex-1 group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-indigo-400 transition-colors">🔍</span>
               <input 
                 type="text"
                 placeholder={`Buscar en ${filterBy === 'all' ? 'todo el archivo' : filterBy}...`}
@@ -77,18 +78,22 @@ export default function DashboardPage() {
               />
             </div>
             
-            <select 
-              className="bg-gray-900/40 border border-white/5 rounded-2xl px-6 text-gray-400 outline-none focus:text-white transition-colors cursor-pointer hover:bg-gray-900"
-              onChange={(e) => setFilterBy(e.target.value as 'title' | 'author' | 'all')}
-              value={filterBy}
-            >
-              <option value="all">Filtro: Todo</option>
-              <option value="title">Título</option>
-              <option value="author">Autor</option>
-            </select>
+            {/* Botón de Filtro Estilizado */}
+            <div className="relative">
+              <select 
+                className="w-full md:w-auto appearance-none bg-gray-900/40 border border-white/5 rounded-2xl px-6 py-4 text-gray-300 outline-none focus:text-white transition-all cursor-pointer hover:bg-gray-900 focus:ring-2 focus:ring-indigo-500/20 pr-12"
+                onChange={(e) => setFilterBy(e.target.value as 'title' | 'author' | 'all')}
+                value={filterBy}
+              >
+                <option value="all">📁 Filtrar: Todo</option>
+                <option value="title">📖 Título</option>
+                <option value="author">👤 Autor</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs">▼</div>
+            </div>
           </div>
           
-          {/* Grid de Crónicas con animación de entrada */}
+          {/* Grid de Crónicas */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -105,7 +110,7 @@ export default function DashboardPage() {
             )}
           </motion.div>
 
-          {/* Paginador Minimalista */}
+          {/* Paginador */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-16">
               {[...Array(totalPages)].map((_, i) => (
