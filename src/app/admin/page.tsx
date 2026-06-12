@@ -37,11 +37,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      const fetchUsers = async () => {
-        await loadData();
-      };
-
-      void fetchUsers();
+      void loadData();
     }
   }, [isLoading]);
 
@@ -56,7 +52,7 @@ export default function AdminPage() {
       } else {
         await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
-      toast.success("Cambio realizado correctamente");
+      toast.success("Acción realizada con éxito");
       await loadData();
     } catch {
       toast.error("Error al ejecutar la acción");
@@ -70,8 +66,7 @@ export default function AdminPage() {
   if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando...</div>;
 
   return (
-    // Añadí pb-20 aquí para dar aire antes del footer
-    <div className="space-y-8 pb-20">
+    <div className="space-y-8 pb-32">
       {/* Tarjetas de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
@@ -113,18 +108,33 @@ export default function AdminPage() {
             {filteredUsers.map((u) => (
               <tr key={u.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4">{u.email}</td>
+                
+                {/* Columna Rol Dinámica */}
                 <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    u.role === 'SUPERADMIN' ? 'bg-purple-900/50 text-purple-300' : 
-                    u.role === 'ADMIN' ? 'bg-indigo-900/50 text-indigo-300' : 'bg-gray-800 text-gray-300'
-                  }`}>
-                    {u.role}
-                  </span>
+                  {user?.role === 'SUPERADMIN' ? (
+                    <select 
+                      key={u.role}
+                      defaultValue={u.role}
+                      onChange={(e) => handleAction(u.id, 'role', e.target.value)}
+                      className="bg-gray-800 border border-indigo-500/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer hover:border-indigo-500 hover:bg-gray-700 outline-none w-full max-w-[120px]"
+                    >
+                      <option value="USER">USER</option>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="SUPERADMIN">SUPERADMIN</option>
+                    </select>
+                  ) : (
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      u.role === 'SUPERADMIN' ? 'bg-purple-900/50 text-purple-300' : 
+                      u.role === 'ADMIN' ? 'bg-indigo-900/50 text-indigo-300' : 'bg-gray-800 text-gray-300'
+                    }`}>
+                      {u.role}
+                    </span>
+                  )}
                 </td>
+
                 <td className="p-4 text-center font-mono">{u._count?.chronicles || 0}</td>
+                
                 <td className="p-4 flex gap-3 justify-center items-center">
-                  
-                  {/* Botón de Bloqueo */}
                   <button 
                     onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
                     className={`px-3 py-1 rounded-lg text-sm border transition-all duration-200 hover:scale-105 active:scale-95 ${
@@ -135,23 +145,6 @@ export default function AdminPage() {
                   >
                     {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
                   </button>
-
-                  {/* Selector de Roles (Tu botón de escalar) */}
-                  {user?.role === 'SUPERADMIN' && (
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] text-gray-500 uppercase">Rol:</span>
-                       <select 
-                        key={u.role}
-                        defaultValue={u.role}
-                        onChange={(e) => handleAction(u.id, 'role', e.target.value)}
-                        className="bg-gray-800 border border-indigo-500/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer transition-all duration-200 hover:border-indigo-500 hover:bg-gray-700 outline-none"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                        <option value="SUPERADMIN">SUPERADMIN</option>
-                      </select>
-                    </div>
-                  )}
                 </td>
               </tr>
             ))}
