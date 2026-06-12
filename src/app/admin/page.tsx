@@ -29,7 +29,7 @@ export default function AdminPage() {
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
       setStats(statsData);
     } catch (err) {
-      toast.error("Error al cargar los datos administrativos");
+      toast.error("Error al cargar los datos");
     } finally {
       setLoading(false);
     }
@@ -37,18 +37,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      // call inside an async IIFE to avoid calling setState synchronously in the effect body
-      void (async () => {
-        await loadData();
-      })();
+      // defer to next tick to avoid calling setState synchronously within the effect
+      const t = setTimeout(() => void loadData(), 0);
+      return () => clearTimeout(t);
     }
   }, [isLoading]);
 
   const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', newRole?: string) => {
     try {
       if (action === 'role') {
-        // Confirmación específica para roles
-        if (!confirm(`¿Confirmas ascender/cambiar el rol a ${newRole}?`)) return;
+        if (!confirm(`¿Confirmas cambiar el rol a ${newRole}?`)) return;
+        // El body se envía como { role: "ADMIN" } para que el backend lo reciba correctamente
         await fetchApi(`/users/role/${id}`, { 
           method: 'PATCH', 
           body: JSON.stringify({ role: newRole }) 
@@ -56,11 +55,9 @@ export default function AdminPage() {
       } else {
         await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
-      
-      toast.success("Cambio realizado correctamente");
-      // Recargamos los datos para asegurar que la tabla muestre la verdad del servidor
+      toast.success("Acción completada");
       await loadData();
-    } catch (err) {
+    } catch {
       toast.error("Error al ejecutar la acción");
     }
   };
@@ -69,7 +66,7 @@ export default function AdminPage() {
     return users.filter((u) => u.email?.toLowerCase().includes(search.toLowerCase()));
   }, [users, search]);
 
-  if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando panel de administración...</div>;
+  if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando...</div>;
 
   return (
     <div className="space-y-8">
@@ -80,22 +77,23 @@ export default function AdminPage() {
           { title: 'Bloqueados', val: stats.blockedUsers, color: 'red' },
           { title: 'Crónicas Totales', val: stats.totalchronicles, color: 'emerald' }
         ].map((item, i) => (
-          <div key={i} className="bg-gray-900/60 p-6 rounded-3xl border border-white/10 shadow-xl">
+          <div key={i} className="bg-gray-900/60 p-6 rounded-3xl border border-white/10 shadow-xl transition-transform hover:scale-[1.02]">
             <h3 className={`text-${item.color}-400 text-sm font-bold uppercase tracking-widest`}>{item.title}</h3>
             <p className="text-4xl font-bold text-white mt-3">{item.val}</p>
           </div>
         ))}
       </div>
 
-      {/* Gestión de Usuarios */}
-      <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10">
+      {/* Tabla de Usuarios */}
+      <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">Usuarios Registrados</h2>
+            <h2 className="text-2xl font-bold text-white">Gestión de Usuarios</h2>
+            <p className="text-gray-400 text-sm">Administración y permisos</p>
           </div>
           <input 
             placeholder="Buscar por email..."
-            className="bg-gray-800 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-indigo-500"
+            className="bg-gray-800 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-indigo-500 transition-all"
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
@@ -124,23 +122,25 @@ export default function AdminPage() {
                 <td className="p-4 text-center font-mono">{u._count?.chronicles || 0}</td>
                 <td className="p-4 flex gap-3 justify-center items-center">
                   
-                  {/* Botón de Bloqueo */}
+                  {/* Botón de Bloqueo con Hover */}
                   <button 
                     onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
-                    className={`px-3 py-1 rounded-lg text-sm border transition-all ${
-                      u.isBlocked ? 'border-emerald-500/50 text-emerald-400' : 'border-red-500/50 text-red-400'
+                    className={`px-3 py-1 rounded-lg text-sm border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                      u.isBlocked 
+                        ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' 
+                        : 'border-red-500/50 text-red-400 hover:bg-red-500/20'
                     }`}
                   >
                     {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
                   </button>
 
-                  {/* Selector de Roles */}
+                  {/* Selector de Roles con Hover */}
                   {user?.role === 'SUPERADMIN' && (
                     <select 
-                      key={u.role} // Esto fuerza a React a re-renderizar si el rol cambia
+                      key={u.role}
                       defaultValue={u.role}
                       onChange={(e) => handleAction(u.id, 'role', e.target.value)}
-                      className="bg-gray-800 border border-white/10 rounded-lg px-2 py-1 text-sm text-white cursor-pointer hover:border-indigo-500"
+                      className="bg-gray-800 border border-white/10 rounded-lg px-2 py-1 text-sm text-white cursor-pointer transition-all duration-200 hover:border-indigo-500 hover:bg-gray-700 outline-none"
                     >
                       <option value="USER">USER</option>
                       <option value="ADMIN">ADMIN</option>
