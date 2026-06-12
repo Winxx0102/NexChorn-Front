@@ -7,7 +7,8 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; connect-src 'self' https://nex-chorn-back.vercel.app;",
+            // Añadimos 'unsafe-inline' para permitir los scripts que Next.js necesita
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://nex-chorn-back.vercel.app;",
           },
         ],
       },
