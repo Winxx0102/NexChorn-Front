@@ -1,5 +1,5 @@
 'use client';
-import { useAuth } from '@/context/AuthContext'; // Importamos el hook del contexto
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -8,21 +8,17 @@ type Chronicle = {
   _id?: string;
   title?: string;
   author?: string;
+  authorEmail?: string; // <--- Agregamos este campo (asegúrate de que tu backend lo envíe)
   content?: string;
 };
 
 export default function ChronicleCard({ chronicle }: { chronicle: Chronicle | null }) {
   const router = useRouter();
-  
-  // Consumimos el estado global. 'isLoading' es vital para saber 
-  // si el usuario aún se está verificando.
   const { user, isLoading } = useAuth(); 
 
   if (!chronicle) return null;
 
   const chronicleId = chronicle?.id || chronicle?._id;
-
-  // Lógica de permisos: solo es visible si NO está cargando y es ADMIN/SUPERADMIN
   const canEdit = !isLoading && (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN');
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -41,12 +37,19 @@ export default function ChronicleCard({ chronicle }: { chronicle: Chronicle | nu
             <h3 className="text-xl font-bold text-white mb-1">
               {chronicle?.title || 'Sin título'}
             </h3>
-            <p className="text-sm text-indigo-400 font-medium">
-              Por: {chronicle?.author || 'Anónimo'}
-            </p>
+            <div className="flex flex-col">
+              <p className="text-sm text-indigo-400 font-medium">
+                Por: {chronicle?.author || 'Anónimo'}
+              </p>
+              {/* Aquí mostramos el correo pequeñito */}
+              {chronicle?.authorEmail && (
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  {chronicle.authorEmail}
+                </p>
+              )}
+            </div>
           </div>
           
-          {/* El botón ahora reacciona automáticamente cuando isLoading cambia a false */}
           {canEdit && (
             <button 
               onClick={handleEdit}
