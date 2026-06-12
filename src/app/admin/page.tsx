@@ -37,9 +37,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      // defer to next tick to avoid calling setState synchronously within the effect
-      const t = setTimeout(() => void loadData(), 0);
-      return () => clearTimeout(t);
+      const fetchUsers = async () => {
+        await loadData();
+      };
+
+      void fetchUsers();
     }
   }, [isLoading]);
 
@@ -47,7 +49,6 @@ export default function AdminPage() {
     try {
       if (action === 'role') {
         if (!confirm(`¿Confirmas cambiar el rol a ${newRole}?`)) return;
-        // El body se envía como { role: "ADMIN" } para que el backend lo reciba correctamente
         await fetchApi(`/users/role/${id}`, { 
           method: 'PATCH', 
           body: JSON.stringify({ role: newRole }) 
@@ -55,7 +56,7 @@ export default function AdminPage() {
       } else {
         await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
-      toast.success("Acción completada");
+      toast.success("Cambio realizado correctamente");
       await loadData();
     } catch {
       toast.error("Error al ejecutar la acción");
@@ -69,7 +70,8 @@ export default function AdminPage() {
   if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando...</div>;
 
   return (
-    <div className="space-y-8">
+    // Añadí pb-20 aquí para dar aire antes del footer
+    <div className="space-y-8 pb-20">
       {/* Tarjetas de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
@@ -84,7 +86,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Tabla de Usuarios */}
+      {/* Gestión de Usuarios */}
       <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -122,7 +124,7 @@ export default function AdminPage() {
                 <td className="p-4 text-center font-mono">{u._count?.chronicles || 0}</td>
                 <td className="p-4 flex gap-3 justify-center items-center">
                   
-                  {/* Botón de Bloqueo con Hover */}
+                  {/* Botón de Bloqueo */}
                   <button 
                     onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
                     className={`px-3 py-1 rounded-lg text-sm border transition-all duration-200 hover:scale-105 active:scale-95 ${
@@ -134,18 +136,21 @@ export default function AdminPage() {
                     {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
                   </button>
 
-                  {/* Selector de Roles con Hover */}
+                  {/* Selector de Roles (Tu botón de escalar) */}
                   {user?.role === 'SUPERADMIN' && (
-                    <select 
-                      key={u.role}
-                      defaultValue={u.role}
-                      onChange={(e) => handleAction(u.id, 'role', e.target.value)}
-                      className="bg-gray-800 border border-white/10 rounded-lg px-2 py-1 text-sm text-white cursor-pointer transition-all duration-200 hover:border-indigo-500 hover:bg-gray-700 outline-none"
-                    >
-                      <option value="USER">USER</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPERADMIN">SUPERADMIN</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] text-gray-500 uppercase">Rol:</span>
+                       <select 
+                        key={u.role}
+                        defaultValue={u.role}
+                        onChange={(e) => handleAction(u.id, 'role', e.target.value)}
+                        className="bg-gray-800 border border-indigo-500/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer transition-all duration-200 hover:border-indigo-500 hover:bg-gray-700 outline-none"
+                      >
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPERADMIN">SUPERADMIN</option>
+                      </select>
+                    </div>
                   )}
                 </td>
               </tr>
