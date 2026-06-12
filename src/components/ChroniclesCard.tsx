@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FaFilePdf } from 'react-icons/fa'; // Asegúrate de tener react-icons
+import { FaFilePdf } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 
 type Chronicle = {
@@ -35,15 +35,36 @@ export default function ChronicleCard({ chronicle }: { chronicle: Chronicle | nu
     e.stopPropagation();
     
     const doc = new jsPDF();
+    
+    // --- Header Estilizado con Marca ---
+    doc.setFillColor(79, 70, 229); // Indigo-600
+    doc.rect(0, 0, 210, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('NEXCHRON', 15, 13);
+    
+    // --- Cuerpo del Documento ---
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text(chronicle.title || 'Crónica', 20, 20);
+    doc.text(chronicle.title || 'Crónica', 20, 40);
+    
     doc.setFontSize(12);
-    doc.text(`Por: ${chronicle.author || 'Anónimo'}`, 20, 30);
-    doc.line(20, 35, 190, 35);
-    doc.setFontSize(10);
-    // Dividir el contenido en líneas para que no se salga de la hoja
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Por: ${chronicle.author || 'Anónimo'}`, 20, 50);
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 55, 190, 55);
+    
+    doc.setFontSize(11);
     const splitContent = doc.splitTextToSize(chronicle.content || '', 170);
-    doc.text(splitContent, 20, 45);
+    doc.text(splitContent, 20, 65);
+    
+    // --- Footer ---
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Generado por NexChron | Plataforma de Gestión de Crónicas', 20, 290);
     
     doc.save(`${chronicle.title?.replace(/\s+/g, '_') || 'cronica'}.pdf`);
   };
@@ -83,7 +104,6 @@ export default function ChronicleCard({ chronicle }: { chronicle: Chronicle | nu
               Leer completa →
             </span>
             
-            {/* Botón Exportar PDF */}
             <button 
               onClick={exportToPDF}
               className="flex items-center gap-2 text-[10px] uppercase font-bold text-gray-500 hover:text-red-400 transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 hover:border-red-500/30"
