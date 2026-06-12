@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
+
 
 export default function ChronicleDetailPage() {
   const params = useParams();
@@ -55,7 +55,7 @@ const userRole = (user?.role as string | undefined)?.toUpperCase()
 
   return (
     <div className="min-h-screen ">
-      <Navbar />
+     
       
       <main className="max-w-4xl mx-auto px-6 py-12">
         <button 

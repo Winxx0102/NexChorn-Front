@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { fetchApi } from '@/services/api';
-import Navbar from '@/components/Navbar';
+
 import ChronicleCard from '@/components/ChroniclesCard';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -60,7 +60,7 @@ export default function MyChroniclesPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen">
-        <Navbar />
+     
         <main className="max-w-7xl mx-auto p-8">
           <h1 className="text-3xl font-bold text-white mb-8">Mis Crónicas</h1>
           

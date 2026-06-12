@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import Navbar from '@/components/Navbar';
+
 
 export default function EditChroniclePage() {
   const params = useParams();
@@ -79,7 +79,7 @@ export default function EditChroniclePage() {
 
   return (
     <div className="min-h-screen text-white">
-      <Navbar />
+      
       <main className="max-w-2xl mx-auto p-8">
         <h1 className="text-3xl font-bold mb-8">Editar Crónica</h1>
         <form onSubmit={handleSubmit} className="space-y-6">

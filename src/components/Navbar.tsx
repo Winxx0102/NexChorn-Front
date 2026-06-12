@@ -8,7 +8,7 @@ export default function Navbar() {
   const pathname = usePathname(); // Obtenemos la ruta actual
 
   // Si estamos en la página de login, no renderizamos la navbar
-  if (pathname === '/login') return null;
+  if (pathname === '/login' || pathname === '/register') return null;
 
   const handleLogout = async () => {
     await logout();
