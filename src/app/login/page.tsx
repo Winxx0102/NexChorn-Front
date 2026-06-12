@@ -53,7 +53,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="p-8 bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-gray-800">
-        <h2 className="text-2xl font-bold text-white mb-6">Bienvenido de nuevo (Cookie Auth)</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Bienvenido de nuevo</h2>
         
         <input 
           required
