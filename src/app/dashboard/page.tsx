@@ -65,7 +65,7 @@ export default function DashboardPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedData.map((c, index) => (
-              <ChronicleCard key={c?.id || c?._id || index} chronicle={c} user={user} />
+              <ChronicleCard key={c?.id || c?._id || index} chronicle={c} />
             ))}
           </div>
 

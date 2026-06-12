@@ -1,41 +1,49 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { usePathname } from 'next/navigation'; // Necesario para detectar la ruta
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
-  const { logout } = useAuth();
-  const pathname = usePathname(); // Obtenemos la ruta actual
+  const { logout, user } = useAuth();
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Si estamos en la página de login, no renderizamos la navbar
   if (pathname === '/login' || pathname === '/register') return null;
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  const isAdminOrSuper = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
 
   return (
-    <nav className="w-full p-6 bg-gray-900 border-b border-gray-800 flex justify-between items-center z-50">
-      <Link 
-        href="/dashboard" 
-        className="text-4xl font-extrabold text-white transition-colors duration-300 hover:text-indigo-400"
-      >
-        NexChron
-      </Link>
-      
-      <div className="space-x-6 flex items-center">
-        <Link href="/my-chronicles" className="text-gray-300 hover:text-white transition-colors">
-          Mis Crónicas
+    <nav className="sticky top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-white/10 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        
+        <Link href="/dashboard" className="text-2xl font-black text-white hover:text-indigo-400 transition-colors">
+          NexChron
         </Link>
-        <Link href="/chronicles/create" className="text-gray-300 hover:text-white transition-colors">
-          Nueva Crónica
-        </Link>
-        <button 
-          onClick={handleLogout} 
-          className="bg-red-600 px-4 py-2 rounded-lg text-white hover:bg-red-500 transition-colors"
-        >
-          Salir
+
+        {/* Botón Hamburguesa (Móvil) */}
+        <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? '✕' : '☰'}
         </button>
+
+        {/* Menú PC */}
+        <div className={`md:flex items-center space-x-8 ${isOpen ? 'absolute top-full left-0 w-full bg-gray-900 p-6 flex flex-col space-y-4' : 'hidden'}`}>
+          <Link href="/my-chronicles" className="text-gray-300 hover:text-indigo-400 transition-all">Mis Crónicas</Link>
+          <Link href="/chronicles/create" className="text-gray-300 hover:text-indigo-400 transition-all">Nueva</Link>
+          
+          {isAdminOrSuper && (
+            <Link href="/admin" className="text-indigo-400 font-bold hover:scale-105 transition-transform">
+              Admin
+            </Link>
+          )}
+          
+          <button 
+            onClick={() => logout()} 
+            className="bg-white/5 hover:bg-red-500/20 text-white border border-white/10 px-4 py-2 rounded-xl transition-all"
+          >
+            Salir
+          </button>
+        </div>
       </div>
     </nav>
   );
