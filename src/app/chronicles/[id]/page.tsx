@@ -28,36 +28,45 @@ export default function ChronicleDetailPage() {
       .then((data) => { setChronicle(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [params.id]);
-
-  const exportToPDF = () => {
+const exportToPDF = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!chronicle) return;
+    
     const doc = new jsPDF();
     
-    // Header Estilizado
+    // --- Header Estilizado con Marca ---
     doc.setFillColor(79, 70, 229); // Indigo-600
     doc.rect(0, 0, 210, 20, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
     doc.text('NEXCHRON', 15, 13);
     
-    // Contenido
+    // --- Cuerpo del Documento ---
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
     doc.text(chronicle.title || 'Crónica', 20, 40);
+    
     doc.setFontSize(12);
-    doc.text(`Autor: ${chronicle.author || 'Anónimo'}`, 20, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Por: ${chronicle.author || 'Anónimo'}`, 20, 50);
+    
+    doc.setDrawColor(200, 200, 200);
     doc.line(20, 55, 190, 55);
     
     doc.setFontSize(11);
     const splitContent = doc.splitTextToSize(chronicle.content || '', 170);
     doc.text(splitContent, 20, 65);
     
-    // Footer
+    // --- Footer ---
     doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
     doc.text('Generado por NexChron | Plataforma de Gestión de Crónicas', 20, 290);
+    
     doc.save(`${chronicle.title?.replace(/\s+/g, '_') || 'cronica'}.pdf`);
   };
-
   if (loading || authLoading) return <div className="min-h-screen flex items-center justify-center text-indigo-400">Cargando...</div>;
   if (!chronicle) return <div className="min-h-screen text-white flex items-center justify-center">Crónica no encontrada.</div>;
 
