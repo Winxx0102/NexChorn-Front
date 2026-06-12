@@ -3,18 +3,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-
-interface User {
-  id: number;
-  email?: string;
-  role?: string;
-  isBlocked: boolean;
-  _count: { chronicles: number };
-}
+import UserActionMenu from '@/components/admin/UserActionMenu'; // Importa el nuevo componente
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<any[]>([]); // Tipado simplificado para el ejemplo
   const [stats, setStats] = useState({ totalUsers: 0, blockedUsers: 0, totalchronicles: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,7 +21,7 @@ export default function AdminPage() {
       ]);
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
       setStats(statsData);
-    } catch (err) {
+    } catch {
       toast.error("Error al cargar los datos");
     } finally {
       setLoading(false);
@@ -37,7 +30,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      void loadData();
+      void Promise.resolve().then(loadData);
     }
   }, [isLoading]);
 
@@ -45,10 +38,7 @@ export default function AdminPage() {
     try {
       if (action === 'role') {
         if (!confirm(`¿Confirmas cambiar el rol a ${newRole}?`)) return;
-        await fetchApi(`/users/role/${id}`, { 
-          method: 'PATCH', 
-          body: JSON.stringify({ role: newRole }) 
-        });
+        await fetchApi(`/users/role/${id}`, { method: 'PATCH', body: JSON.stringify({ role: newRole }) });
       } else {
         await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
@@ -59,15 +49,12 @@ export default function AdminPage() {
     }
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => u.email?.toLowerCase().includes(search.toLowerCase()));
-  }, [users, search]);
+  const filteredUsers = useMemo(() => users.filter((u) => u.email?.toLowerCase().includes(search.toLowerCase())), [users, search]);
 
   if (loading && users.length === 0) return <div className="text-white text-center p-20">Cargando...</div>;
 
   return (
     <div className="space-y-8 pb-32">
-      {/* Tarjetas de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { title: 'Usuarios Totales', val: stats.totalUsers, color: 'indigo' },
@@ -81,7 +68,6 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Gestión de Usuarios */}
       <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -108,43 +94,18 @@ export default function AdminPage() {
             {filteredUsers.map((u) => (
               <tr key={u.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4">{u.email}</td>
-                
-                {/* Columna Rol Dinámica */}
                 <td className="p-4">
-                  {user?.role === 'SUPERADMIN' ? (
-                    <select 
-                      key={u.role}
-                      defaultValue={u.role}
-                      onChange={(e) => handleAction(u.id, 'role', e.target.value)}
-                      className="bg-gray-800 border border-indigo-500/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer hover:border-indigo-500 hover:bg-gray-700 outline-none w-full max-w-[120px]"
-                    >
-                      <option value="USER">USER</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPERADMIN">SUPERADMIN</option>
-                    </select>
-                  ) : (
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      u.role === 'SUPERADMIN' ? 'bg-purple-900/50 text-purple-300' : 
-                      u.role === 'ADMIN' ? 'bg-indigo-900/50 text-indigo-300' : 'bg-gray-800 text-gray-300'
-                    }`}>
-                      {u.role}
-                    </span>
-                  )}
+                  <span className={`px-2 py-1 rounded text-xs ${u.role === 'SUPERADMIN' ? 'bg-purple-900/50 text-purple-300' : u.role === 'ADMIN' ? 'bg-indigo-900/50 text-indigo-300' : 'bg-gray-800 text-gray-300'}`}>
+                    {u.role}
+                  </span>
                 </td>
-
                 <td className="p-4 text-center font-mono">{u._count?.chronicles || 0}</td>
-                
-                <td className="p-4 flex gap-3 justify-center items-center">
-                  <button 
-                    onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
-                    className={`px-3 py-1 rounded-lg text-sm border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                      u.isBlocked 
-                        ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' 
-                        : 'border-red-500/50 text-red-400 hover:bg-red-500/20'
-                    }`}
-                  >
-                    {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
-                  </button>
+                <td className="p-4 flex justify-center">
+                  <UserActionMenu 
+                    userRole={user?.role || ''}
+                    targetUser={{ id: u.id, role: u.role, isBlocked: u.isBlocked }}
+                    onAction={handleAction}
+                  />
                 </td>
               </tr>
             ))}
