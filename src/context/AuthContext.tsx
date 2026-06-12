@@ -2,10 +2,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { fetchApi } from '@/services/api';
 
-type User = {
+// 1. Exportamos el tipo para poder usarlo en otros archivos
+export type User = {
   id: string;
   name?: string;
   email?: string;
+  role?: 'USER' | 'ADMIN' | 'SUPERADMIN' | string;
   [key: string]: unknown;
 };
 
@@ -32,6 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
+        // Al usar fetchApi, el token se envía automáticamente en los headers
         const data = await fetchApi('/auth/verify-session'); 
         setUser(data.user || data); 
       } catch (err) {
@@ -68,7 +71,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// --- AÑADE ESTO PARA REPARAR EL ERROR ---
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
