@@ -12,14 +12,14 @@ export default function CreateChroniclePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Al quitar la extracción manual de userId, el código es más limpio y seguro.
-    // El backend debe extraer el usuario directamente del token (middleware de autenticación).
+    // Al no necesitar extraer el userId manualmente, el flujo es más seguro.
+    // La identidad viaja automáticamente en la cookie.
     const loadingToast = toast.loading("Publicando tu crónica...");
 
     try {
       await fetchApi('/chronicles', {
         method: 'POST',
-        body: JSON.stringify(form), // Enviamos solo los datos del formulario
+        body: JSON.stringify(form), // Solo enviamos los datos del formulario
       });
 
       toast.dismiss(loadingToast);
