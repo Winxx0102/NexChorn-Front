@@ -8,6 +8,7 @@ interface User {
   id: number;
   email?: string;
   role?: string;
+  isBlocked: boolean; // Importante: esto viene de tu base de datos
 }
 
 export default function AdminPage() {
@@ -23,20 +24,9 @@ export default function AdminPage() {
         fetchApi('/users'),
         fetchApi('/users/admin/stats')
       ]);
-
-      // --- DEBUG CRÍTICO ---
-      console.log("Respuesta de /users:", usersData); 
-      // ---------------------
-
-      // Adaptación inteligente: busca en qué parte del objeto vienen los usuarios
-      const dataToSet = Array.isArray(usersData) 
-        ? usersData 
-        : (usersData.data || usersData.users || []); // Intenta extraerlos si vienen anidados
-      
-      setUsers(dataToSet);
+      setUsers(Array.isArray(usersData) ? usersData : (usersData.data || []));
       setStats(statsData);
     } catch (err) {
-      console.error(err);
       toast.error("Error al cargar datos");
     } finally {
       setLoading(false);
@@ -45,99 +35,100 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      loadData();
+      // defer the state updates to avoid synchronous setState inside effect
+      const t = setTimeout(() => {
+        loadData();
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [isLoading]);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => 
-      u.email?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [users, search]);
-
-  const handleAction = async (id: number, action: 'block' | 'role', role?: string) => {
+  const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', role?: string) => {
     try {
       if (action === 'role') {
         await fetchApi(`/users/role/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) });
       } else {
-        await fetchApi(`/users/block/${id}`, { method: 'PATCH' });
+        // Llama al endpoint de bloquear o desbloquear
+        await fetchApi(`/users/${action}/${id}`, { method: 'PATCH' });
       }
-      toast.success("Acción realizada con éxito");
+      toast.success("Acción completada con éxito");
       loadData();
     } catch {
       toast.error("Error al ejecutar la acción");
     }
   };
 
-  if (loading) return <div className="text-white text-center p-20">Cargando...</div>;
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => u.email?.toLowerCase().includes(search.toLowerCase()));
+  }, [users, search]);
+
+  if (loading) return <div className="text-white text-center p-20">Cargando dashboard...</div>;
 
   return (
     <div className="space-y-8">
-      {/* Tarjetas de Métricas */}
+      {/* Tarjetas de Métricas - Diseño Estético */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-900/60 p-6 rounded-2xl border border-white/10">
-            <h3 className="text-gray-400 text-sm">Usuarios Totales</h3>
-            <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
-        </div>
-        <div className="bg-gray-900/60 p-6 rounded-2xl border border-white/10">
-            <h3 className="text-gray-400 text-sm">Total Crónicas</h3>
-            <p className="text-3xl font-bold text-white">{stats.totalchronicles}</p>
-        </div>
+        {[
+          { title: 'Usuarios Totales', val: stats.totalUsers, color: 'indigo' },
+          { title: 'Bloqueados', val: stats.blockedUsers, color: 'red' },
+          { title: 'Total Crónicas', val: stats.totalchronicles, color: 'emerald' }
+        ].map((item, i) => (
+          <div key={i} className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-3xl border border-white/10 shadow-xl hover:border-white/20 transition-all">
+            <h3 className={`text-${item.color}-400 text-sm font-semibold uppercase tracking-wider`}>{item.title}</h3>
+            <p className="text-4xl font-bold text-white mt-3">{item.val}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Tabla con Buscador */}
-      <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10">
-        <div className="flex justify-between items-center mb-6">
+      {/* Tabla */}
+      <div className="bg-gray-900/60 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
+        <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-white">Gestión de Usuarios</h2>
           <input 
             placeholder="Buscar por email..."
-            className="bg-gray-800 p-2 rounded text-white border border-white/10 w-64"
+            className="bg-gray-800/50 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-indigo-500 transition-all"
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-gray-300">
-            <thead>
-              <tr className="text-indigo-400 uppercase text-sm border-b border-white/10">
-                <th className="p-4">Email</th><th className="p-4">Rol</th><th className="p-4 text-center">Acciones</th>
+        <table className="w-full text-left text-gray-300">
+          <thead className="text-indigo-400 text-xs uppercase tracking-widest border-b border-white/10">
+            <tr><th className="p-4">Email</th><th className="p-4">Rol</th><th className="p-4 text-center">Acciones</th></tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {filteredUsers.map((u) => (
+              <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                <td className="p-4">{u.email}</td>
+                <td className="p-4"><span className="bg-gray-800 px-2 py-1 rounded text-xs text-gray-300">{u.role}</span></td>
+                <td className="p-4 flex gap-3 justify-center items-center">
+                  {/* Botón de Bloqueo Toggleable */}
+                  <button 
+                    onClick={() => handleAction(u.id, u.isBlocked ? 'unblock' : 'block')}
+                    className={`px-3 py-1 rounded-lg text-sm transition-all border ${
+                      u.isBlocked 
+                        ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10' 
+                        : 'border-red-500/50 text-red-400 hover:bg-red-500/10'
+                    }`}
+                  >
+                    {u.isBlocked ? 'Desbloquear' : 'Bloquear'}
+                  </button>
+
+                  {user?.role === 'SUPERADMIN' && (
+                    <select 
+                      defaultValue={u.role}
+                      onChange={(e) => handleAction(u.id, 'role', e.target.value)}
+                      className="bg-gray-800 border border-white/10 rounded-lg px-3 py-1 text-sm text-white hover:border-indigo-500 cursor-pointer"
+                    >
+                      <option value="USER">USER</option>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="SUPERADMIN">SUPERADMIN</option>
+                    </select>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-4">{u.email || 'Sin email'}</td>
-                    <td className="p-4">{u.role}</td>
-                    <td className="p-4 flex gap-3 justify-center">
-                      <button 
-                        onClick={() => handleAction(u.id, 'block')} 
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Bloquear
-                      </button>
-                      {user?.role === 'SUPERADMIN' && (
-                        <select 
-                          defaultValue={u.role}
-                          onChange={(e) => handleAction(u.id, 'role', e.target.value)}
-                          className="bg-gray-800 border border-white/10 rounded px-2 py-1 text-sm text-white"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="ADMIN">ADMIN</option>
-                          <option value="SUPERADMIN">SUPERADMIN</option>
-                        </select>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="p-8 text-center text-gray-500">No se encontraron usuarios.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
