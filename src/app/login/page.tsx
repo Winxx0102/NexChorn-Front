@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Usaremos useRouter para una navegación más fluida
+import { useRouter } from 'next/navigation';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -12,9 +12,8 @@ export default function LoginPage() {
   const { login, user, isLoading } = useAuth();
   const router = useRouter();
 
-  // 1. Efecto para redirigir si ya hay un usuario logueado
   useEffect(() => {
-    // Si la carga terminó y ya tenemos un usuario, vamos al dashboard
+    // Si ya hay sesión (el backend nos reconoce por la cookie), enviamos al dashboard
     if (!isLoading && user) {
       router.replace('/dashboard');
     }
@@ -25,19 +24,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Al usar fetchApi con credentials: 'include', las cookies 
+      // se envían y reciben automáticamente en esta petición.
       const data = await fetchApi('/auth/login', { 
         method: 'POST', 
         body: JSON.stringify(form) 
       });
 
-      if (data.access_token) {
-        localStorage.setItem('token', data.access_token);
-      }
+      // YA NO NECESITAMOS localStorage.setItem('token', ...)
+      // El navegador guarda la cookie por nosotros automáticamente.
 
-      // Actualizamos el estado global
+      // Actualizamos el estado del contexto con los datos que devuelve el login
       login(data.user || data); 
       
-      // En lugar de window.location, usamos router.push para mantener el estado de React
       router.push('/dashboard');
     } catch (err: unknown) {
       console.error("Login fallido:", err);
@@ -47,16 +46,14 @@ export default function LoginPage() {
     }
   };
 
-  // 2. Si todavía estamos comprobando el token en AuthContext, no mostramos el login
-  // Esto evita el "parpadeo" de ver el login por un segundo
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-white">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-white">Cargando sesión...</div>;
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="p-8 bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-gray-800">
-        <h2 className="text-2xl font-bold text-white mb-6">Bienvenido de nuevo</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Bienvenido de nuevo (Cookie Auth)</h2>
         
         <input 
           required

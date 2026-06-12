@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { fetchApi } from '@/services/api';
 
-// 1. Exportamos el tipo para poder usarlo en otros archivos
 export type User = {
   id: string;
   name?: string;
@@ -26,20 +25,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // Al usar fetchApi, el token se envía automáticamente en los headers
+        // Al usar credentials: 'include' en fetchApi, 
+        // el navegador envía la cookie automáticamente aquí.
         const data = await fetchApi('/auth/verify-session'); 
         setUser(data.user || data); 
       } catch (err) {
-        console.warn("Sesión expirada o token inválido");
-        localStorage.removeItem('token');
+        // Si falla, es porque no hay sesión o la cookie expiró
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -58,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (e) {
       console.error("Error al cerrar sesión en el servidor");
     } finally {
-      localStorage.removeItem('token');
+      // Ya no necesitamos eliminar localStorage.removeItem('token')
       setUser(null);
       window.location.href = '/login';
     }

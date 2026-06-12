@@ -1,20 +1,14 @@
-// src/services/api.ts
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nexchorn-back.onrender.com';
 
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
-  // 1. Recuperamos el token del almacenamiento local
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
   const config: RequestInit = {
     ...options,
-    // 2. Quitamos 'credentials: include' porque ya no usamos cookies
+    // CLAVE: Esto permite que el navegador envíe las cookies automáticamente
+    credentials: 'include', 
     headers: {
       'Content-Type': 'application/json',
-      // 3. Añadimos el token al header Authorization
-    ...(token ? { 'Authorization': `${token}` } : {}),
       ...options.headers,
     },
   };
@@ -22,12 +16,12 @@ export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
   const response = await fetch(url, config);
 
   if (response.status === 401) {
-    // Aquí podrías redirigir al login si el token es inválido
+    // Si el backend responde 401, la cookie expiró o no existe
     throw new Error('Unauthorized');
   }
 
   const data = await response.json().catch(() => ({}));
   
-  if (!response.ok) throw new Error(data.message || 'Error');
+  if (!response.ok) throw new Error(data.message || 'Error en la petición');
   return data;
 };
