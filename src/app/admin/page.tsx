@@ -4,6 +4,7 @@ import { fetchApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import UserActionMenu from '@/components/admin/UserActionMenu';
 
 type AdminUser = {
@@ -16,10 +17,20 @@ type AdminUser = {
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
+  
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState({ totalUsers: 0, blockedUsers: 0, totalchronicles: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Verificación extra de seguridad en el nivel de página
+  useEffect(() => {
+    if (!isLoading && (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN'))) {
+      toast.error("Acceso denegado");
+      router.push('/');
+    }
+  }, [user, isLoading, router]);
 
   const loadData = async () => {
     try {
@@ -38,10 +49,10 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (!isLoading) {
-      void Promise.resolve().then(loadData);
+    if (!isLoading && user) {
+      void Promise.resolve().then(() => loadData());
     }
-  }, [isLoading]);
+  }, [isLoading, user]);
 
   const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', newRole?: string) => {
     try {
@@ -62,7 +73,10 @@ export default function AdminPage() {
     [users, search]
   );
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-indigo-400">Cargando panel...</div>;
+  // Si aún está cargando, no es admin o el usuario no tiene ID, no renderizamos el contenido sensible
+  if (isLoading || !user || !user.id || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
+    return null; 
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-32">
@@ -85,7 +99,7 @@ export default function AdminPage() {
         <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-xl font-black text-white">Gestión de Usuarios</h2>
-            <p className="text-gray-500 text-sm">Control de acceso y permisos de la comunidad</p>
+            <p className="text-gray-500 text-sm">Administración y permisos de la comunidad</p>
           </div>
           <input 
             placeholder="Filtrar por email..."
@@ -116,7 +130,8 @@ export default function AdminPage() {
                   <td className="p-4 text-center text-sm text-gray-400 font-mono">{u._count?.chronicles || 0}</td>
                   <td className="p-4 flex justify-center">
                     <UserActionMenu 
-                      userRole={user?.role || ''}
+                      userRole={user.role ?? ''}
+                      currentUserId={Number(user.id)} // <--- Pasamos el ID del usuario logueado
                       targetUser={{ id: u.id, role: u.role, isBlocked: u.isBlocked }}
                       onAction={handleAction}
                     />
