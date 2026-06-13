@@ -23,36 +23,48 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ totalUsers: 0, blockedUsers: 0, totalchronicles: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // Verificación extra de seguridad en el nivel de página
-  useEffect(() => {
-    if (!isLoading && (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN'))) {
-      toast.error("Acceso denegado");
-      router.push('/');
-    }
-  }, [user, isLoading, router]);
-
   const loadData = async () => {
+    // carga de datos del panel de administración
     try {
       setLoading(true);
       const [usersResponse, statsData] = await Promise.all([
         fetchApi('/users'),
         fetchApi('/users/admin/stats')
       ]);
-      setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
-      setStats(statsData);
-    } catch {
-      toast.error("Error al cargar los datos");
+
+      // --- LOGS DE DEPURACIÓN ---
+      console.log("Raw Users Response:", usersResponse);
+      console.log("Raw Stats Response:", statsData);
+      
+      // Manejo flexible de la respuesta (por si viene como { data: [] } o como array directo)
+      const usersArray = Array.isArray(usersResponse) 
+        ? usersResponse 
+        : (usersResponse?.data || []);
+        
+      setUsers(usersArray);
+      setStats(statsData || { totalUsers: 0, blockedUsers: 0, totalchronicles: 0 });
+      
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+      toast.error("Error al cargar los datos del panel");
     } finally {
       setLoading(false);
     }
   };
 
+  // 1. Verificación de seguridad y carga de datos
   useEffect(() => {
-    if (!isLoading && user) {
-      void Promise.resolve().then(() => loadData());
+    if (!isLoading) {
+      if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
+        toast.error("Acceso denegado");
+        router.push('/');
+      } else {
+        // avoid synchronous setState inside effect — schedule load on next tick
+        const t = setTimeout(() => { loadData(); }, 0);
+        return () => clearTimeout(t);
+      }
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, router]);
 
   const handleAction = async (id: number, action: 'block' | 'unblock' | 'role', newRole?: string) => {
     try {
@@ -63,7 +75,8 @@ export default function AdminPage() {
       }
       toast.success("Operación exitosa");
       await loadData();
-    } catch {
+    } catch (err) {
+      console.error("Error en acción:", err);
       toast.error("Error al procesar la solicitud");
     }
   };
@@ -73,14 +86,13 @@ export default function AdminPage() {
     [users, search]
   );
 
-  // Si aún está cargando, no es admin o el usuario no tiene ID, no renderizamos el contenido sensible
-  if (isLoading || !user || !user.id || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
-    return null; 
-  }
+  // 2. Pantalla de carga o denegación
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-indigo-400">Cargando...</div>;
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) return null;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-32">
-      {/* Tarjetas de Estadísticas */}
+      {/* Tarjetas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { title: 'Usuarios', val: stats.totalUsers, color: 'indigo' },
@@ -94,53 +106,54 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Tabla de Gestión */}
+      {/* Tabla */}
       <div className="bg-gray-900/40 backdrop-blur-xl border border-white/5 rounded-3xl p-8">
-        <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
-          <div>
-            <h2 className="text-xl font-black text-white">Gestión de Usuarios</h2>
-            <p className="text-gray-500 text-sm">Administración y permisos de la comunidad</p>
-          </div>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-xl font-black text-white">Gestión de Usuarios</h2>
           <input 
-            placeholder="Filtrar por email..."
-            className="bg-gray-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500 transition-all w-full md:w-64"
+            placeholder="Buscar..."
+            className="bg-gray-950 border border-white/10 rounded-xl px-4 py-2 text-sm text-white"
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="text-gray-500 text-[10px] uppercase tracking-widest border-b border-white/5">
-              <tr>
-                <th className="p-4">Email</th>
-                <th className="p-4">Rol</th>
-                <th className="p-4 text-center">Crónicas</th>
-                <th className="p-4 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="p-4 text-sm font-medium text-gray-300 group-hover:text-white">{u.email}</td>
-                  <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${u.role === 'SUPERADMIN' ? 'bg-purple-500/10 text-purple-400' : u.role === 'ADMIN' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-gray-500/10 text-gray-400'}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center text-sm text-gray-400 font-mono">{u._count?.chronicles || 0}</td>
-                  <td className="p-4 flex justify-center">
-                    <UserActionMenu 
-                      userRole={user.role ?? ''}
-                      currentUserId={Number(user.id)} // <--- Pasamos el ID del usuario logueado
-                      targetUser={{ id: u.id, role: u.role, isBlocked: u.isBlocked }}
-                      onAction={handleAction}
-                    />
-                  </td>
+        {users.length === 0 && !loading ? (
+          <div className="text-center py-20 text-gray-500">No se encontraron usuarios en el sistema.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="text-gray-500 text-[10px] uppercase border-b border-white/5">
+                <tr>
+                  <th className="p-4">Email</th>
+                  <th className="p-4">Rol</th>
+                  <th className="p-4 text-center">Crónicas</th>
+                  <th className="p-4 text-center">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4 text-sm text-gray-300">{u.email}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold ${u.role === 'SUPERADMIN' ? 'text-purple-400' : 'text-indigo-400'}`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center text-gray-400 font-mono">{u._count?.chronicles || 0}</td>
+                    <td className="p-4 flex justify-center">
+                      <UserActionMenu 
+                        userRole={user.role ?? ''}
+                        currentUserId={Number(user.id)}
+                        targetUser={{ id: u.id, role: u.role, isBlocked: u.isBlocked }}
+                        onAction={handleAction}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </motion.div>
   );
