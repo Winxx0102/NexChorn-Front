@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 interface Props {
   userRole: string;
   targetUser: { id: number; role: string; isBlocked: boolean };
-  // Añadimos el ID del usuario logueado para comparar
   currentUserId?: number; 
   onAction: (id: number, action: 'block' | 'unblock' | 'role', role?: string) => void;
 }
@@ -15,6 +14,7 @@ export default function UserActionMenu({ userRole, targetUser, currentUserId, on
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsOpen(false);
@@ -23,8 +23,14 @@ export default function UserActionMenu({ userRole, targetUser, currentUserId, on
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isSuperAdmin = userRole?.trim().toUpperCase() === 'SUPERADMIN';
+  // Lógica de permisos
+  const roleUpper = userRole?.trim().toUpperCase();
+  const isAdmin = roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN';
+  const isSuperAdmin = roleUpper === 'SUPERADMIN';
   const isSelf = currentUserId === targetUser.id;
+
+  // Si no es admin, no renderizamos el botón en absoluto
+  if (!isAdmin) return null;
 
   const handleRoleChange = (role: string) => {
     setIsOpen(false);
@@ -54,7 +60,7 @@ export default function UserActionMenu({ userRole, targetUser, currentUserId, on
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             className="absolute right-0 mt-2 w-48 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl p-2 z-[60] overflow-hidden"
           >
-            {/* Bloqueo / Desbloqueo */}
+            {/* Bloqueo / Desbloqueo - Solo si no es el mismo usuario */}
             {!isSelf && (
               <button 
                 onClick={() => { onAction(targetUser.id, targetUser.isBlocked ? 'unblock' : 'block'); setIsOpen(false); }}
@@ -64,7 +70,7 @@ export default function UserActionMenu({ userRole, targetUser, currentUserId, on
               </button>
             )}
 
-            {/* Gestión de Roles (Solo para Superadmins) */}
+            {/* Gestión de Roles - Solo para Superadmins y no es el mismo usuario */}
             {isSuperAdmin && !isSelf && (
               <div className="border-t border-white/5 mt-2 pt-2">
                 <p className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-widest font-black">Asignar Rol</p>
